@@ -5,42 +5,39 @@ import Web3Modal from "web3modal";
 import { abi, NFT_CONTRACT_ADDRESS } from "../constants";
 import styles from "../styles/Home.module.css";
 
-
 export default function Home() {
-  // walletConnected keep track of whether the user's wallet is connected or not
+  // walletConnected记录用户的钱包是否已连接
   const [walletConnected, setWalletConnected] = useState(false);
-  // presaleStarted keeps track of whether the presale has started or not
+  // presaleStarted记录预售是否已开始
   const [presaleStarted, setPresaleStarted] = useState(false);
-  // presaleEnded keeps track of whether the presale ended
+  // presaleEnded记录预售是否已结束
   const [presaleEnded, setPresaleEnded] = useState(false);
-  // loading is set to true when we are waiting for a transaction to get mined
+  // loading在我们等待交易被挖掘时设置为true
   const [loading, setLoading] = useState(false);
-  // checks if the currently connected MetaMask wallet is the owner of the contract
+  // 检验当前连接的MetaMask钱包是否是合约的所有者
   const [isOwner, setIsOwner] = useState(false);
-  // tokenIdsMinted keeps track of the number of tokenIds that have been minted
+  // tokenIdsMinted跟踪已经被铸造的tokenId的数量
   const [tokenIdsMinted, setTokenIdsMinted] = useState("0");
-  // Create a reference to the Web3 Modal (used for connecting to Metamask) which persists as long as the page is open
+  // 创建一个Web3 Modal的引用（用于连接到Metamask），只要页面打开就会持续存在
   const web3ModalRef = useRef();
 
-
   /**
-   * presaleMint: Mint an NFT during the presale
+   * 在预售开始时铸造一个NFT
    */
   const presaleMint = async () => {
     try {
-      // We need a Signer here since this is a 'write' transaction.
+      // 获取一个Signer，因为这是一个“写”交易
       const signer = await getProviderOrSigner(true);
-      // Create a new instance of the Contract with a Signer, which allows
-      // update methods
+      // 创建一个新的合约实例，这个实例有一个Signer，这样就可以调用更新方法
       const nftContract = new Contract(NFT_CONTRACT_ADDRESS, abi, signer);
-      // call the presaleMint from the contract, only whitelisted addresses would be able to mint
+      // 调用合约中的presaleMint方法，只有白名单地址才能铸造
       const tx = await nftContract.presaleMint({
-        // value signifies the cost of one crypto dev which is "0.01" eth.
-        // We are parsing `0.01` string to ether using the utils library from ethers.js
+        // value表示一个Crypto Dev的成本，这个成本是“0.01”eth。
+        // 我们使用ethers.js的utils库将“0.01”字符串解析为ether
         value: utils.parseEther("0.01"),
       });
       setLoading(true);
-      // wait for the transaction to get mined
+      // 等待交易被挖掘
       await tx.wait();
       setLoading(false);
       window.alert("You successfully minted a Crypto Dev!");
@@ -49,25 +46,23 @@ export default function Home() {
     }
   };
 
-
   /**
-   * publicMint: Mint an NFT after the presale
+   * 在预售结束后铸造一个NFT
    */
   const publicMint = async () => {
     try {
-      // We need a Signer here since this is a 'write' transaction.
+      // 我们需要一个Signer，因为这是一个“写”交易
       const signer = await getProviderOrSigner(true);
-      // Create a new instance of the Contract with a Signer, which allows
-      // update methods
+      // 创建一个新的合约实例，这个实例有一个Signer，这样就可以调用更新方法
       const nftContract = new Contract(NFT_CONTRACT_ADDRESS, abi, signer);
-      // call the mint from the contract to mint the Crypto Dev
+      // 调用合约中的mint方法，铸造一个Crypto Dev
       const tx = await nftContract.mint({
-        // value signifies the cost of one crypto dev which is "0.01" eth.
-        // We are parsing `0.01` string to ether using the utils library from ethers.js
+        // value表示一个Crypto Dev的成本，这个成本是“0.01”eth。
+        // 我们使用ethers.js的utils库将“0.01”字符串解析为ether
         value: utils.parseEther("0.01"),
       });
       setLoading(true);
-      // wait for the transaction to get mined
+      // 等待交易被挖掘
       await tx.wait();
       setLoading(false);
       window.alert("You successfully minted a Crypto Dev!");
@@ -76,14 +71,13 @@ export default function Home() {
     }
   };
 
-
   /*
-      connectWallet: Connects the MetaMask wallet
+      连接MetaMask钱包
     */
   const connectWallet = async () => {
     try {
-      // Get the provider from web3Modal, which in our case is MetaMask
-      // When used for the first time, it prompts the user to connect their wallet
+      // 获取web3Modal的提供者，这里我们使用的是MetaMask
+      // 当第一次使用时，它会提示用户连接他们的钱包
       await getProviderOrSigner();
       setWalletConnected(true);
     } catch (err) {
@@ -91,44 +85,40 @@ export default function Home() {
     }
   };
 
-
   /**
-   * startPresale: starts the presale for the NFT Collection
+   * 开启预售
    */
   const startPresale = async () => {
     try {
-      // We need a Signer here since this is a 'write' transaction.
+      // 获取一个Signer，因为这是一个“写”交易
       const signer = await getProviderOrSigner(true);
-      // Create a new instance of the Contract with a Signer, which allows
-      // update methods
+      // 创建一个新的合约实例，这个实例有一个Signer，这样就可以调用更新方法
       const nftContract = new Contract(NFT_CONTRACT_ADDRESS, abi, signer);
-      // call the startPresale from the contract
+      // 调用合约中的startPresale方法
       const tx = await nftContract.startPresale();
       setLoading(true);
-      // wait for the transaction to get mined
+      // 等待交易被挖掘
       await tx.wait();
       setLoading(false);
-      // set the presale started to true
+      // 设置预售已开始
       await checkIfPresaleStarted();
     } catch (err) {
       console.error(err);
     }
   };
 
-
   /**
-   * checkIfPresaleStarted: checks if the presale has started by querying the `presaleStarted`
-   * variable in the contract
+   * 检查预售是否已开始
    */
   const checkIfPresaleStarted = async () => {
     try {
-      // Get the provider from web3Modal, which in our case is MetaMask
-      // No need for the Signer here, as we are only reading state from the blockchain
+      // 获取web3Modal的提供者，这里我们使用的是MetaMask
+      // 这里不需要Signer，因为我们只是从区块链中读取状态
       const provider = await getProviderOrSigner();
-      // We connect to the Contract using a Provider, so we will only
-      // have read-only access to the Contract
+      // 我们使用提供者连接到合约，所以我们只能对合约进行只读访问
+      // 创建一个新的合约实例，这个实例有一个Provider，这样就可以调用只读方法
       const nftContract = new Contract(NFT_CONTRACT_ADDRESS, abi, provider);
-      // call the presaleStarted from the contract
+      // 调用合约中的presaleStarted方法
       const _presaleStarted = await nftContract.presaleStarted();
       if (!_presaleStarted) {
         await getOwner();
@@ -141,25 +131,22 @@ export default function Home() {
     }
   };
 
-
   /**
-   * checkIfPresaleEnded: checks if the presale has ended by querying the `presaleEnded`
-   * variable in the contract
+   * 检查预售是否已结束
    */
   const checkIfPresaleEnded = async () => {
     try {
-      // Get the provider from web3Modal, which in our case is MetaMask
-      // No need for the Signer here, as we are only reading state from the blockchain
+      // 获取web3Modal的提供者，这里我们使用的是MetaMask
+      // 这里不需要Signer，因为我们只是从区块链中读取状态
       const provider = await getProviderOrSigner();
-      // We connect to the Contract using a Provider, so we will only
-      // have read-only access to the Contract
+      // 创建一个新的合约实例，这个实例有一个Provider，这样就可以调用只读方法
       const nftContract = new Contract(NFT_CONTRACT_ADDRESS, abi, provider);
-      // call the presaleEnded from the contract
+      // 获取合约中的presaleEnded方法
       const _presaleEnded = await nftContract.presaleEnded();
-      // _presaleEnded is a Big Number, so we are using the lt(less than function) instead of `<`
-      // Date.now()/1000 returns the current time in seconds
-      // We compare if the _presaleEnded timestamp is less than the current time
-      // which means presale has ended
+      // _presaleEnded是一个Big Number，所以我们使用lt（小于函数）而不是“<”
+      // Date.now（）/ 1000返回当前时间（以秒为单位）
+      // 我们比较_presaleEnded时间戳是否小于当前时间
+      // 这意味着预售已结束
       const hasEnded = _presaleEnded.lt(Math.floor(Date.now() / 1000));
       if (hasEnded) {
         setPresaleEnded(true);
@@ -173,23 +160,21 @@ export default function Home() {
     }
   };
 
-
   /**
-   * getOwner: calls the contract to retrieve the owner
+   * getOwner：调用合约以检索所有者
    */
   const getOwner = async () => {
     try {
-      // Get the provider from web3Modal, which in our case is MetaMask
-      // No need for the Signer here, as we are only reading state from the blockchain
+      // 获取web3Modal的提供者，这里我们使用的是MetaMask
+      // 这里不需要Signer，因为我们只是从区块链中读取状态
       const provider = await getProviderOrSigner();
-      // We connect to the Contract using a Provider, so we will only
-      // have read-only access to the Contract
+      // 创建一个新的合约实例，这个实例有一个Provider，这样就可以调用只读方法
       const nftContract = new Contract(NFT_CONTRACT_ADDRESS, abi, provider);
-      // call the owner function from the contract
+      // 调用合约中的owner方法
       const _owner = await nftContract.owner();
-      // We will get the signer now to extract the address of the currently connected MetaMask account
+      // 我们现在会得到一个Signer，以提取当前连接的MetaMask帐户的地址
       const signer = await getProviderOrSigner(true);
-      // Get the address associated to the signer which is connected to  MetaMask
+      // 获取与连接到MetaMask的Signer相关联的地址
       const address = await signer.getAddress();
       if (address.toLowerCase() === _owner.toLowerCase()) {
         setIsOwner(true);
@@ -199,54 +184,43 @@ export default function Home() {
     }
   };
 
-
   /**
-   * getTokenIdsMinted: gets the number of tokenIds that have been minted
+   * 获取tokenIdsMinted：获取已经被铸造的tokenIds的数量
    */
   const getTokenIdsMinted = async () => {
     try {
-      // Get the provider from web3Modal, which in our case is MetaMask
-      // No need for the Signer here, as we are only reading state from the blockchain
+      // 获取web3Modal的提供者，这里我们使用的是MetaMask
+      // 这里不需要Signer，因为我们只是从区块链中读取状态
       const provider = await getProviderOrSigner();
-      // We connect to the Contract using a Provider, so we will only
-      // have read-only access to the Contract
+      // 创建一个新的合约实例，这个实例有一个Provider，这样就可以调用只读方法
       const nftContract = new Contract(NFT_CONTRACT_ADDRESS, abi, provider);
-      // call the tokenIds from the contract
+      // 调用合约中的tokenIds方法
       const _tokenIds = await nftContract.tokenIds();
-      //_tokenIds is a `Big Number`. We need to convert the Big Number to a string
+      // _tokenIds是一个Big Number。我们需要将Big Number转换为字符串
       setTokenIdsMinted(_tokenIds.toString());
     } catch (err) {
       console.error(err);
     }
   };
 
-
   /**
-   * Returns a Provider or Signer object representing the Ethereum RPC with or without the
-   * signing capabilities of metamask attached
-   *
-   * A `Provider` is needed to interact with the blockchain - reading transactions, reading balances, reading state, etc.
-   *
-   * A `Signer` is a special type of Provider used in case a `write` transaction needs to be made to the blockchain, which involves the connected account
-   * needing to make a digital signature to authorize the transaction being sent. Metamask exposes a Signer API to allow your website to
-   * request signatures from the user using Signer functions.
-   *
-   * @param {*} needSigner - True if you need the signer, default false otherwise
+   * 返回一个提供者或签名者对象，该对象表示具有或不具有Metamask附加的签名功能的以太坊RPC
+   * Provider是需要与区块链交互的对象 - 读取交易，读取余额，读取状态等。
+   * Signer是一个特殊类型的Provider，用于在需要将交易发送到区块链的情况下进行写入操作，这涉及到连接的帐户需要使用签名函数对交易进行数字签名以授权发送交易。
+   * @param {*} needSigner - 如果需要签名者，则为true，否则为false
    */
   const getProviderOrSigner = async (needSigner = false) => {
-    // Connect to Metamask
-    // Since we store `web3Modal` as a reference, we need to access the `current` value to get access to the underlying object
+    // 连接到MetaMask
+    // 由于我们将`web3Modal`存储为引用，因此我们需要访问`current`值才能访问底层对象
     const provider = await web3ModalRef.current.connect();
     const web3Provider = new providers.Web3Provider(provider);
 
-
-    // If user is not connected to the Goerli network, let them know and throw an error
+    // 如果用户没有连接到Goerli网络，请让他们知道并抛出错误
     const { chainId } = await web3Provider.getNetwork();
     if (chainId !== 5) {
       window.alert("Change the network to Goerli");
       throw new Error("Change network to Goerli");
     }
-
 
     if (needSigner) {
       const signer = web3Provider.getSigner();
@@ -255,15 +229,12 @@ export default function Home() {
     return web3Provider;
   };
 
-
-  // useEffects are used to react to changes in state of the website
-  // The array at the end of function call represents what state changes will trigger this effect
-  // In this case, whenever the value of `walletConnected` changes - this effect will be called
+  // useEffects被用来响应网站状态的变化
+  // 函数调用的末尾的数组表示什么状态变化会触发这个效果
+  // 在这种情况下，每当`walletConnected`的值发生变化时，就会调用这个效果
   useEffect(() => {
-    // if wallet is not connected, create a new instance of Web3Modal and connect the MetaMask wallet
+    // 如果钱包没有连接，创建一个新的Web3Modal实例并连接MetaMask钱包
     if (!walletConnected) {
-      // Assign the Web3Modal class to the reference object by setting it's `current` value
-      // The `current` value is persisted throughout as long as this page is open
       web3ModalRef.current = new Web3Modal({
         network: "goerli",
         providerOptions: {},
@@ -271,18 +242,15 @@ export default function Home() {
       });
       connectWallet();
 
-
-      // Check if presale has started and ended
+      // 判断预售是否已经开始和结束
       const _presaleStarted = checkIfPresaleStarted();
       if (_presaleStarted) {
         checkIfPresaleEnded();
       }
 
-
       getTokenIdsMinted();
 
-
-      // Set an interval which gets called every 5 seconds to check presale has ended
+      // 如果预售已经结束，清除这个interval
       const presaleEndedInterval = setInterval(async function () {
         const _presaleStarted = await checkIfPresaleStarted();
         if (_presaleStarted) {
@@ -293,20 +261,18 @@ export default function Home() {
         }
       }, 5 * 1000);
 
-
-      // set an interval to get the number of token Ids minted every 5 seconds
+      // 每5秒获取tokenIdsMinted的数量
       setInterval(async function () {
         await getTokenIdsMinted();
       }, 5 * 1000);
     }
   }, [walletConnected]);
 
-
   /*
-      renderButton: Returns a button based on the state of the dapp
+      返回一个按钮，这个按钮基于dapp的状态
     */
   const renderButton = () => {
-    // If wallet is not connected, return a button which allows them to connect their wallet
+    // 如果钱包没有连接，返回一个按钮，允许他们连接钱包
     if (!walletConnected) {
       return (
         <button onClick={connectWallet} className={styles.button}>
@@ -315,14 +281,11 @@ export default function Home() {
       );
     }
 
-
-    // If we are currently waiting for something, return a loading button
     if (loading) {
       return <button className={styles.button}>Loading...</button>;
     }
 
-
-    // If connected user is the owner, and presale hasn't started yet, allow them to start the presale
+    // 如果连接的用户是所有者，并且预售尚未开始，则允许他们启动预售
     if (isOwner && !presaleStarted) {
       return (
         <button className={styles.button} onClick={startPresale}>
@@ -331,8 +294,7 @@ export default function Home() {
       );
     }
 
-
-    // If connected user is not the owner but presale hasn't started yet, tell them that
+    // 如果连接的用户不是所有者，但预售尚未开始，则告诉他们
     if (!presaleStarted) {
       return (
         <div>
@@ -341,8 +303,7 @@ export default function Home() {
       );
     }
 
-
-    // If presale started, but hasn't ended yet, allow for minting during the presale period
+    // 如果预售已经开始，但尚未结束，则允许在预售期间进行挖矿
     if (presaleStarted && !presaleEnded) {
       return (
         <div>
@@ -357,8 +318,7 @@ export default function Home() {
       );
     }
 
-
-    // If presale started and has ended, it's time for public minting
+    // 如果预售已经开始并且已经结束，那么就是公共挖矿的时候了
     if (presaleStarted && presaleEnded) {
       return (
         <button className={styles.button} onClick={publicMint}>
@@ -367,7 +327,6 @@ export default function Home() {
       );
     }
   };
-
 
   return (
     <div>
@@ -391,7 +350,6 @@ export default function Home() {
           <img className={styles.image} src="./cryptodevs/0.svg" />
         </div>
       </div>
-
 
       <footer className={styles.footer}>
         Made with &#10084; by Crypto Devs

@@ -7,78 +7,89 @@ import "./IWhitelist.sol";
 
 contract CryptoDevs is ERC721Enumerable, Ownable {
     /**
-      * @dev _baseTokenURI for computing {tokenURI}. If set, the resulting URI for each
-      * token will be the concatenation of the `baseURI` and the `tokenId`.
-      */
+     * @dev _baseTokenURI是用来计算{tokenURI}的。如果设置了，每个token的结果URI将是`baseURI`和`tokenId`的连接。
+     * 所以如果baseURI是`https://example.com/api/token/`，tokenId是`1`，那么该token的tokenURI将是`https://example.com/api/token/1`。
+     */
     string _baseTokenURI;
 
-    //  _price is the price of one Crypto Dev NFT
+    // _price 代表着一个Crypto Dev NFT的价格
     uint256 public _price = 0.01 ether;
 
-    // _paused is used to pause the contract in case of an emergency
+    // _paused 用来在紧急情况下暂停合约
     bool public _paused;
 
     // max number of CryptoDevs
     uint256 public maxTokenIds = 20;
 
-    // total number of tokenIds minted
+    // tokenIds代表着已经被创建的Crypto Devs的数量
     uint256 public tokenIds;
 
-    // Whitelist contract instance
+    // Whitelist合约实例
     IWhitelist whitelist;
 
-    // boolean to keep track of whether presale started or not
+    // 用来记录预售是否开始
     bool public presaleStarted;
 
-    // timestamp for when presale would end
+    // 用来记录预售结束的时间戳
     uint256 public presaleEnded;
 
-    modifier onlyWhenNotPaused {
+    modifier onlyWhenNotPaused() {
         require(!_paused, "Contract currently paused");
         _;
     }
 
     /**
-      * @dev ERC721 constructor takes in a `name` and a `symbol` to the token collection.
-      * name in our case is `Crypto Devs` and symbol is `CD`.
-      * Constructor for Crypto Devs takes in the baseURI to set _baseTokenURI for the collection.
-      * It also initializes an instance of whitelist interface.
-      */
-    constructor (string memory baseURI, address whitelistContract) ERC721("Crypto Devs", "CD") {
+     * @dev ERC721构造函数接收一个`name`和一个`symbol`作为token集合的名称和符号。
+     * 在我们的例子中，name是`Crypto Devs`，symbol是`CD`。
+     * Crypto Devs的构造函数接收一个baseURI作为集合的_baseTokenURI。
+     * 它还初始化了一个whitelist接口的实例。
+     */
+    constructor(
+        string memory baseURI,
+        address whitelistContract
+    ) ERC721("Crypto Devs", "CD") {
         _baseTokenURI = baseURI;
         whitelist = IWhitelist(whitelistContract);
     }
 
     /**
-    * @dev startPresale starts a presale for the whitelisted addresses
-      */
+     * @dev 为白名单列表中的地址开启预售
+     */
     function startPresale() public onlyOwner {
         presaleStarted = true;
-        // Set presaleEnded time as current timestamp + 5 minutes
-        // Solidity has cool syntax for timestamps (seconds, minutes, hours, days, years)
+        // 设置预售结束时间为当前时间戳 + 5分钟
+        // Solidity有很酷的语法来表示时间戳（秒，分钟，小时，天，年）
         presaleEnded = block.timestamp + 5 minutes;
     }
 
     /**
-      * @dev presaleMint allows a user to mint one NFT per transaction during the presale.
-      */
+     * @dev presaleMint允许用户在预售期间每次交易生成一个NFT。
+     */
     function presaleMint() public payable onlyWhenNotPaused {
-        require(presaleStarted && block.timestamp < presaleEnded, "Presale is not running");
-        require(whitelist.whitelistedAddresses(msg.sender), "You are not whitelisted");
+        require(
+            presaleStarted && block.timestamp < presaleEnded,
+            "Presale is not running"
+        );
+        require(
+            whitelist.whitelistedAddresses(msg.sender),
+            "You are not whitelisted"
+        );
         require(tokenIds < maxTokenIds, "Exceeded maximum Crypto Devs supply");
         require(msg.value >= _price, "Ether sent is not correct");
         tokenIds += 1;
-        //_safeMint is a safer version of the _mint function as it ensures that
-        // if the address being minted to is a contract, then it knows how to deal with ERC721 tokens
-        // If the address being minted to is not a contract, it works the same way as _mint
+        // _safeMint是一个更安全的版本，它确保如果被创建的地址是一个合约，那么它知道如何处理ERC721 token。
+        // 如果被创建的地址不是一个合约，它的工作方式与_mint相同。
         _safeMint(msg.sender, tokenIds);
     }
 
     /**
-    * @dev mint allows a user to mint 1 NFT per transaction after the presale has ended.
-    */
+     * @dev mint函数允许用户在预售结束后每次交易生成一个NFT。
+     */
     function mint() public payable onlyWhenNotPaused {
-        require(presaleStarted && block.timestamp >=  presaleEnded, "Presale has not ended yet");
+        require(
+            presaleStarted && block.timestamp >= presaleEnded,
+            "Presale has not ended yet"
+        );
         require(tokenIds < maxTokenIds, "Exceed maximum Crypto Devs supply");
         require(msg.value >= _price, "Ether sent is not correct");
         tokenIds += 1;
@@ -86,32 +97,31 @@ contract CryptoDevs is ERC721Enumerable, Ownable {
     }
 
     /**
-    * @dev _baseURI overrides the Openzeppelin's ERC721 implementation which by default
-    * returned an empty string for the baseURI
-    */
+     * @dev _baseURI覆盖了Openzeppelin的ERC721实现，该实现默认情况下返回baseURI的空字符串
+     * @return the baseURI
+     */
     function _baseURI() internal view virtual override returns (string memory) {
         return _baseTokenURI;
     }
 
     /**
-    * @dev setPaused makes the contract paused or unpaused
-      */
+     * @dev setPaused函数用来暂停或者取消暂停合约
+     */
     function setPaused(bool val) public onlyOwner {
         _paused = val;
     }
 
     /**
-    * @dev withdraw sends all the ether in the contract
-    * to the owner of the contract
-      */
-    function withdraw() public onlyOwner  {
+     * @dev withdraw函数用来从合约中提取以太币
+     */
+    function withdraw() public onlyOwner {
         address _owner = owner();
         uint256 amount = address(this).balance;
-        (bool sent, ) =  _owner.call{value: amount}("");
+        (bool sent, ) = _owner.call{value: amount}("");
         require(sent, "Failed to send Ether");
     }
 
-      // Function to receive Ether. msg.data must be empty
+    // Function to receive Ether. msg.data must be empty
     receive() external payable {}
 
     // Fallback function is called when msg.data is not empty

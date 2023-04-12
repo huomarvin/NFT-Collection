@@ -3,33 +3,32 @@ require("dotenv").config({ path: ".env" });
 const { WHITELIST_CONTRACT_ADDRESS, METADATA_URL } = require("../constants");
 
 async function main() {
-  // Address of the whitelist contract that you deployed in the previous module
+  // 上一个模块中部署的白名单合约的地址
   const whitelistContract = WHITELIST_CONTRACT_ADDRESS;
-  // URL from where we can extract the metadata for a Crypto Dev NFT
+  // 从哪里可以提取Crypto Dev NFT的元数据的URL
   const metadataURL = METADATA_URL;
   /*
-  A ContractFactory in ethers.js is an abstraction used to deploy new smart contracts,
-  so cryptoDevsContract here is a factory for instances of our CryptoDevs contract.
+  一个合约工厂是一个抽象，用于部署新的智能合约，所以cryptoDevsContract是我们的CryptoDevs合约的实例工厂。
   */
   const cryptoDevsContract = await ethers.getContractFactory("CryptoDevs");
 
-  // deploy the contract
+  // 部署合约
   const deployedCryptoDevsContract = await cryptoDevsContract.deploy(
     metadataURL,
     whitelistContract
   );
 
-  // Wait for it to finish deploying
+  // 等待合约部署完成
   await deployedCryptoDevsContract.deployed();
 
-  // print the address of the deployed contract
+  // 打印合约的地址
   console.log(
     "Crypto Devs Contract Address:",
     deployedCryptoDevsContract.address
   );
 }
 
-// Call the main function and catch if there is any error
+// 调用main函数并捕获错误
 main()
   .then(() => process.exit(0))
   .catch((error) => {
